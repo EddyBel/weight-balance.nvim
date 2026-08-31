@@ -8,6 +8,11 @@ local M = {}
 
 M.buffer_analize = 0
 
+local M = {}
+
+-- Guarda una referencia global de la configuración para usarla en los detectores
+M.config = {}
+
 local default_typefiles = {
     "python",
     "javascript",
@@ -18,32 +23,58 @@ local default_typefiles = {
     "lua"
 }
 
---- Configura el plugin, define el comando de usuario y registra los autocomandos
---- para actualizar el análisis y renderizado de dependencias automáticamente según las opciones.
----
---- @param opts? table Tabla de opciones de configuración (auto_check, enabled_typefiles, virtualtext).
 function M.setup(opts)
     opts = opts or {}
-    local auto_check = opts.auto_check ~= nil and opts.auto_check or true
-    local enabled_typefiles = opts.enabled_typefiles or default_typefiles
-    local vt_opts = opts.virtualtext or {}
 
-    -- Definir el comando de usuario para ejecutar el análisis manualmente
+    -- Fusionar opciones principales con valores por defecto
+    M.config.auto_check = opts.auto_check ~= nil and opts.auto_check or true
+    M.config.enabled_typefiles = opts.enabled_typefiles or default_typefiles
+
+    -- Fusionar sub-tabla virtualtext de forma segura
+    local user_vt = opts.virtualtext or {}
+    local default_vt = {
+        normalized = false,
+        thresholds = {
+            warning = 100 * 1024,
+            danger = 1 * 1024 * 1024,
+        },
+        icons = {
+            low = " ",
+            warning = " ",
+            danger = "󰸕 ",
+            not_found = "󰒲 ",
+        },
+        highlights = {
+            low = "DiagnosticOk",
+            warning = "DiagnosticWarn",
+            danger = "DiagnosticError",
+            not_found = "Comment",
+        },
+    }
+
+    M.config.virtualtext = {
+        normalized = user_vt.normalized ~= nil and user_vt.normalized or default_vt.normalized,
+        thresholds = vim.tbl_deep_extend("force", default_vt.thresholds, user_vt.thresholds or {}),
+        icons = vim.tbl_deep_extend("force", default_vt.icons, user_vt.icons or {}),
+        highlights = vim.tbl_deep_extend("force", default_vt.highlights, user_vt.highlights or {}),
+    }
+
+    -- Definir el comando de usuario pasándole la configuración procesada
     vim.api.nvim_create_user_command("CheckDeps", function()
-        M.detector_and_view_size(vt_opts)
+        M.detector_and_view_size(M.config.virtualtext)
     end, { desc = "Analizar y ver el tamaño de las dependencias del buffer actual" })
 
-    -- Registrar autocomandos solo si auto_check está habilitado
-    if auto_check then
+    -- Registrar autocomandos usando M.config.auto_check y M.config.enabled_typefiles
+    if M.config.auto_check then
         local augroup = vim.api.nvim_create_augroup("WeightBalanceAuto", { clear = true })
 
         vim.api.nvim_create_autocmd({ "BufEnter", "TextChanged", "TextChangedI" }, {
             group = augroup,
             callback = function()
                 local ft = vim.bo.filetype
-                for _, supported_ft in ipairs(enabled_typefiles) do
+                for _, supported_ft in ipairs(M.config.enabled_typefiles) do
                     if ft == supported_ft then
-                        M.detector_and_view_size(vt_opts)
+                        M.detector_and_view_size(M.config.virtualtext)
                         break
                     end
                 end
