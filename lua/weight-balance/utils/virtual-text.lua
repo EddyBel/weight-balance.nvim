@@ -47,7 +47,7 @@ function M.render_dependencies_virt_text(deps, bufnr, opts)
 
     -- Configuración por defecto usando grupos de resaltado estándar de Neovim y umbrales en bytes
     opts = opts or {}
-    local normalized = opts.normalized or true
+    local normalized = opts.normalized or false
 
     local thresholds = opts.thresholds or {
         warning = 100 * 1024,     -- 100 KB por defecto
