@@ -12,10 +12,11 @@
 
 An asynchronous Neovim plugin that calculates and displays the disk size of your dependencies and imports in real time, directly inside the editor using virtual text.
 
-![Preview 1](./docs/assets/preview_1.png)
-![Preview 2](./docs/assets/preview_2.png)
-![Preview 3](./docs/assets/preview_3.png)
-![Preview 4](./docs/assets/preview_4.png)
+<img src="./docs/assets/preview_1.png" alt="Preview 1" width="100%">
+<img src="./docs/assets/preview_2.png" alt="Preview 2" width="100%">
+<img src="./docs/assets/preview_3.png" alt="Preview 3" width="100%">
+<img src="./docs/assets/preview_4.png" alt="Preview 4" width="100%">
+<img src="./docs/assets/preview_5.gif" alt="Preview 5" width="100%">
 
 ## Purpose
 
