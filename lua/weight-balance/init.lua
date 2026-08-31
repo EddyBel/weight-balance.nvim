@@ -8,8 +8,6 @@ local M = {}
 
 M.buffer_analize = 0
 
-local M = {}
-
 -- Guarda una referencia global de la configuración para usarla en los detectores
 M.config = {}
 
