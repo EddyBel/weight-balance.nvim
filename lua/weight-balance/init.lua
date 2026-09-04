@@ -15,7 +15,7 @@ function M.setup(opts)
 
     opts = opts or {}
 
-    local auto_check = opts.auto_check or false
+    local auto_check = opts.auto_check or true
 
     API.start(
         function(success, error)
