@@ -113,6 +113,25 @@ end
 -- Debounce
 -- ============================================================================
 
+--- Safely close a timer.
+---
+--- A timer may have its callback already scheduled when another
+--- operation attempts to cancel it. Therefore, closing the same
+--- libuv handle more than once must be avoided.
+---
+--- @param timer userdata|nil Timer handle.
+--- @return nil
+local function close_timer(timer)
+    if not timer then
+        return
+    end
+
+    if not timer:is_closing() then
+        timer:stop()
+        timer:close()
+    end
+end
+
 --- Cancel a pending debounce timer for a buffer.
 ---
 --- @param bufnr number Buffer handle number.
@@ -126,8 +145,7 @@ local function cancel_debounce(bufnr)
 
     debounce_timers[bufnr] = nil
 
-    timer:stop()
-    timer:close()
+    close_timer(timer)
 end
 
 --- Cancel every pending debounce timer.
@@ -137,8 +155,6 @@ local function cancel_all_debounce()
     for bufnr in pairs(debounce_timers) do
         cancel_debounce(bufnr)
     end
-
-    debounce_timers = {}
 end
 
 --- Execute a callback after the configured debounce delay.
@@ -150,7 +166,6 @@ end
 --- @param callback function Function to execute after the delay.
 --- @return nil
 local function debounce(bufnr, callback)
-    -- Cancel the previous timer for this buffer.
     cancel_debounce(bufnr)
 
     -- Debounce disabled.
@@ -168,20 +183,31 @@ local function debounce(bufnr, callback)
         0,
 
         vim.schedule_wrap(function()
-            -- Only remove this timer if it is still the
-            -- current timer for this buffer.
-            if debounce_timers[bufnr] == timer then
-                debounce_timers[bufnr] = nil
+            --------------------------------------------------
+            -- This callback may execute after the timer has
+            -- already been cancelled.
+            --
+            -- Only the timer that is still registered for
+            -- this buffer is allowed to clean itself up.
+            --------------------------------------------------
+
+            if debounce_timers[bufnr] ~= timer then
+                close_timer(timer)
+                return
             end
 
-            timer:stop()
-            timer:close()
+            debounce_timers[bufnr] = nil
+
+            close_timer(timer)
+
+            --------------------------------------------------
+            -- Execute the actual debounced operation.
+            --------------------------------------------------
 
             callback()
         end)
     )
 end
-
 
 -- ============================================================================
 -- Configuration
