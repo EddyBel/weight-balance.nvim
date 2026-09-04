@@ -63,7 +63,6 @@ The plugin is designed to remain lightweight and responsive by performing its an
 ```lua
 {
     "EddyBel/weight-balance.nvim",
-    ft = { "python", "javascript", "javascriptreact", "typescript", "typescriptreact", "rust", "lua" },
     opts = {},
 }
 ```
@@ -98,58 +97,251 @@ You can customize thresholds, icons, enabled filetypes, and virtual text behavio
 
 ```lua
 require("weight-balance").setup({
-    auto_check = true,
-    enabled_typefiles = {
-        "python",
-        "javascript",
-        "javascriptreact",
-        "typescript",
-        "typescriptreact",
-        "rust",
-        "lua"
-    },
-    virtualtext = {
-        normalized = true,
-        thresholds = {
-            warning = 100 * 1024,      -- 100 KB
-            danger = 1 * 1024 * 1024,  -- 1 MB
+
+        -- Enable automatic dependency analysis.
+        --
+        -- When enabled, Weight Balance automatically analyzes the current
+        -- buffer when relevant buffer events occur.
+        --
+        -- Set to false to perform dependency analysis manually.
+        auto_check = true,
+
+
+        -- Enable or disable plugin notifications.
+        --
+        -- When enabled, Weight Balance can display notifications for
+        -- errors, warnings, server events and other relevant states.
+        notification = true,
+
+
+        -- Delay in milliseconds before running an analysis after a buffer
+        -- change.
+        --
+        -- This prevents the plugin from sending a request to the backend
+        -- for every single keystroke when the user is actively typing.
+        --
+        -- Set to 0 to disable debouncing.
+        debounce = 200,
+
+
+        -- Buffer and language configuration.
+        --
+        -- Defines which filetypes Weight Balance supports and how their
+        -- dependencies/imports should be detected.
+        buffer = {
+
+            -- Language-specific configuration.
+            --
+            -- The key is the Neovim filetype.
+            languages = {
+
+                -- Python files.
+                python = {
+                    -- Language identifier sent to the Python backend.
+                    parser = "python",
+
+                    -- Patterns used to detect dependencies/imports.
+                    imports = {
+                        "import%s+",
+                        "from%s+",
+                    },
+                },
+
+
+                -- JavaScript files.
+                javascript = {
+                    parser = "node",
+
+                    imports = {
+                        "import%s+",
+                        "require%s*%(",
+                        "from%s+",
+                    },
+                },
+
+
+                -- JavaScript React files.
+                javascriptreact = {
+                    parser = "node",
+
+                    imports = {
+                        "import%s+",
+                        "require%s*%(",
+                        "from%s+",
+                    },
+                },
+
+
+                -- TypeScript files.
+                typescript = {
+                    parser = "node",
+
+                    imports = {
+                        "import%s+",
+                        "require%s*%(",
+                        "from%s+",
+                    },
+                },
+
+
+                -- TypeScript React files.
+                typescriptreact = {
+                    parser = "node",
+
+                    imports = {
+                        "import%s+",
+                        "require%s*%(",
+                        "from%s+",
+                    },
+                },
+
+
+                -- Rust files.
+                rust = {
+                    parser = "rust",
+
+                    imports = {
+                        "use%s+",
+                        "extern%s+crate%s+",
+                    },
+                },
+
+
+                -- Lua files.
+                lua = {
+                    parser = "lua",
+
+                    imports = {
+                        "require%s*%(",
+                    },
+                },
+            },
         },
-        icons = {
-            low = " ",
-            warning = " ",
-            danger = "󰸕 ",
-            not_found = "󰒲 ",
+
+
+        -- Python backend server configuration.
+        server = {
+
+            -- Host where the backend server is running.
+            --
+            -- 127.0.0.1 restricts the server to the local machine.
+            host = "127.0.0.1",
+
+            -- TCP port used by the Weight Balance backend.
+            port = 9090,
+
+            -- Optional Python executable used to start the backend.
+            --
+            -- When nil, Weight Balance automatically searches for:
+            --
+            -- Linux/macOS:
+            --   python3
+            --   python
+            --
+            -- Windows:
+            --   py
+            --   python
+            --
+            -- Example:
+            -- python_command = "/usr/bin/python3"
+            python_command = nil,
         },
-        highlights = {
-            low = "DiagnosticOk",
-            warning = "DiagnosticWarn",
-            danger = "DiagnosticError",
-            not_found = "Comment",
+
+
+        -- Virtual text configuration.
+        virtualtext = {
+
+            -- Align virtual text by using the width required by the
+            -- longest dependency information.
+            --
+            -- When enabled, all virtual text starts at the same column,
+            -- creating a consistent visual alignment.
+            aligned = false,
+
+            -- Size thresholds used to determine dependency severity.
+            thresholds = {
+
+                -- Dependencies below this value are considered low impact.
+                --
+                -- Default: 100 KB
+                warning = 100 * 1024,
+
+                -- Dependencies at or above this value are considered
+                -- dangerous.
+                --
+                -- Default: 1 MB
+                danger = 1 * 1024 * 1024,
+            },
+
+
+            -- Icons displayed according to dependency severity.
+            --
+            -- These defaults use standard Unicode characters and do not
+            -- require Nerd Fonts.
+            icons = {
+
+                -- Dependency below the warning threshold.
+                low = " ",
+
+                -- Dependency at or above the warning threshold.
+                warning = " ",
+
+                -- Dependency at or above the danger threshold.
+                danger = " ",
+
+                -- Dependency could not be found or its size could not
+                -- be determined.
+                not_found = "󰒲 ",
+            },
+
+
+            -- Highlight groups used for each dependency state.
+            --
+            -- These use Neovim's built-in diagnostic highlight groups.
+            highlights = {
+
+                -- Low-impact dependency.
+                low = "DiagnosticOk",
+
+                -- Warning-level dependency.
+                warning = "DiagnosticWarn",
+
+                -- Dangerous dependency.
+                danger = "DiagnosticError",
+
+                -- Dependency not found.
+                not_found = "Comment",
+            },
         },
-    },
 })
 ```
 
 ### Configuration Options
 
-- **`auto_check`** (`boolean`) — Enables or disables automatic background analysis. When set to `true`, the plugin automatically scans buffers on `BufEnter`, `TextChanged`, and `TextChangedI`.
-
-- **`enabled_typefiles`** (`table`) — A list of Neovim filetypes for which the plugin is enabled.
-
-- **`virtualtext.normalized`** (`boolean`) — When `true`, aligns all virtual text indicators using the longest import line in the buffer. When `false`, places each indicator immediately after its corresponding import.
-
-- **`virtualtext.thresholds`** (`table`) — Defines the byte thresholds used to determine the dependency size state:
-
-  - `warning` — Size threshold at which the dependency is marked as a warning. Default: 100 KB.
-  - `danger` — Size threshold at which the dependency is marked as critical. Default: 1 MB.
-
-- **`virtualtext.icons`** (`table`) — Custom glyphs displayed next to the calculated dependency size for each state (`low`, `warning`, `danger`, `not_found`).
-
-- **`virtualtext.highlights`** (`table`) — Neovim highlight groups used to style the virtual text for each dependency size state.
+| Option                                | Type          | Default           | Description                                                                             |
+| ------------------------------------- | ------------- | ----------------- | --------------------------------------------------------------------------------------- |
+| `auto_check`                          | `boolean`     | `true`            | Enables automatic dependency analysis on buffer changes.                                |
+| `notification`                        | `boolean`     | `true`            | Enables or disables plugin notifications.                                               |
+| `debounce`                            | `number`      | `200`             | Delay in milliseconds before analyzing a changed buffer.                                |
+| `buffer.languages`                    | `table`       | See defaults      | Defines the supported filetypes and their dependency detection configuration.           |
+| `buffer.languages.<filetype>.parser`  | `string`      | —                 | Parser identifier used by the Python backend for the specified filetype.                |
+| `buffer.languages.<filetype>.imports` | `table`       | —                 | Lua patterns used to detect dependencies/import statements.                             |
+| `server.host`                         | `string`      | `"127.0.0.1"`     | Host where the Weight Balance backend runs.                                             |
+| `server.port`                         | `number`      | `9090`            | TCP port used by the Weight Balance backend.                                            |
+| `server.python_command`               | `string\|nil` | `nil`             | Python executable used to start the backend. When `nil`, it is detected automatically.  |
+| `virtualtext.aligned`                 | `boolean`     | `false`           | Aligns all virtual text indicators using the longest import line when enabled.          |
+| `virtualtext.thresholds.warning`      | `number`      | `100 * 1024`      | Byte size at which a dependency enters the warning state.                               |
+| `virtualtext.thresholds.danger`       | `number`      | `1 * 1024 * 1024` | Byte size at which a dependency enters the danger state.                                |
+| `virtualtext.icons`                   | `table`       | See defaults      | Icons displayed for each dependency state: `low`, `warning`, `danger`, and `not_found`. |
+| `virtualtext.highlights`              | `table`       | See defaults      | Neovim highlight groups used for each dependency state.                                 |
 
 ## Commands
 
-- **`:CheckDeps`** — Runs a manual dependency analysis and prints information about the processed dependencies to the console.
+| Command                     | Description                                                                               |
+| --------------------------- | ----------------------------------------------------------------------------------------- |
+| `:WeightBalanceCheckDeps`   | Manually analyzes the dependencies of the current buffer.                                 |
+| `:WeightBalanceAlignedText` | Aligns all virtual text indicators to the same column.                                    |
+| `:WeightBalanceNormalText`  | Disables virtual text alignment and displays each indicator immediately after its import. |
 
 ## Contributing
 
